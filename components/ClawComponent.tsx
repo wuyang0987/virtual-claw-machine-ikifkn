@@ -44,16 +44,14 @@ export default function ClawComponent({ isGrabbing, clawState, clawY }: ClawComp
     };
   });
 
-  // Animate the rope length based on claw position
+  // Animate the rope length based on claw position - rope always sticks to top
   const ropeStyle = useAnimatedStyle(() => {
-    const ropeHeight = interpolate(
-      clawY.value,
-      [0, 250],
-      [20, 270]
-    );
+    // The rope extends from the top (0) to the current claw position
+    // Add the claw mechanism height to reach the top of the claw
+    const ropeHeight = Math.max(10, clawY.value);
     
     return {
-      height: withTiming(ropeHeight, { duration: 300 }),
+      height: ropeHeight,
     };
   });
 
@@ -72,11 +70,9 @@ export default function ClawComponent({ isGrabbing, clawState, clawY }: ClawComp
 
   return (
     <View style={styles.clawContainer}>
-      {/* Dynamic Rope */}
+      {/* Dynamic Rope - always extends from top to claw */}
       <Animated.View style={[styles.rope, ropeStyle]}>
-        <View style={styles.ropeSegment} />
-        <View style={styles.ropeSegment} />
-        <View style={styles.ropeSegment} />
+        <View style={styles.ropePattern} />
       </Animated.View>
       
       {/* Claw mechanism */}
@@ -119,30 +115,40 @@ const styles = StyleSheet.create({
     width: 60,
     height: 80,
     alignItems: 'center',
+    position: 'relative',
   },
   rope: {
+    position: 'absolute',
+    top: -1000, // Start way above to ensure it connects to the top
+    left: '50%',
+    marginLeft: -2,
     width: 4,
     backgroundColor: '#8B7355',
     borderRadius: 2,
-    position: 'relative',
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)',
     borderLeftWidth: 1,
     borderLeftColor: '#6B5345',
     borderRightWidth: 1,
     borderRightColor: '#AB9375',
+    zIndex: -1,
   },
-  ropeSegment: {
-    width: '100%',
-    height: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#6B5345',
-    marginTop: 8,
+  ropePattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
   },
   clawMechanism: {
     width: 50,
     height: 60,
     alignItems: 'center',
     position: 'relative',
+    marginTop: 0,
   },
   topConnector: {
     width: 24,

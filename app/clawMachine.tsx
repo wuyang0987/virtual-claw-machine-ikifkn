@@ -9,6 +9,7 @@ import Animated, {
   withSequence,
   withTiming,
   runOnJS,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
@@ -98,30 +99,56 @@ export default function ClawMachineScreen() {
     );
   };
 
-  const checkPrizeCapture = (finalX: number, finalY: number) => {
-    const capturedPrize = prizes.find(prize => {
+  const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
+    // Check if claw is touching any prize during descent
+    const touchedPrize = prizes.find(prize => {
+      const clawCenterX = currentX + CLAW_SIZE / 2;
+      const clawBottomY = currentY + 60; // Claw mechanism height
+      
+      const prizeCenterX = prize.x + PRIZE_SIZE / 2;
+      const prizeCenterY = prize.y + PRIZE_SIZE / 2;
+      
       const distance = Math.sqrt(
-        Math.pow(prize.x - finalX, 2) + Math.pow(prize.y - finalY, 2)
+        Math.pow(prizeCenterX - clawCenterX, 2) + 
+        Math.pow(prizeCenterY - clawBottomY, 2)
       );
+      
+      // Collision threshold - stop when claw gets close to prize
+      return distance < 45;
+    });
+
+    return touchedPrize || null;
+  };
+
+  const checkPrizeCapture = (finalX: number, finalY: number): Prize | null => {
+    const capturedPrize = prizes.find(prize => {
+      const clawCenterX = finalX + CLAW_SIZE / 2;
+      const clawBottomY = finalY + 60;
+      
+      const prizeCenterX = prize.x + PRIZE_SIZE / 2;
+      const prizeCenterY = prize.y + PRIZE_SIZE / 2;
+      
+      const distance = Math.sqrt(
+        Math.pow(prizeCenterX - clawCenterX, 2) + 
+        Math.pow(prizeCenterY - clawBottomY, 2)
+      );
+      
       return distance < 50;
     });
 
     if (capturedPrize && Math.random() > 0.3) {
-      // Prize captured - close the claw
-      setClawState('closed');
       setWonPrizes(prev => [...prev, capturedPrize]);
       setPrizes(prev => prev.filter(p => p.id !== capturedPrize.id));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      // Show success message after a delay
       setTimeout(() => {
         Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}!`);
       }, 500);
       
-      return true;
+      return capturedPrize;
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      return false;
+      return null;
     }
   };
 
@@ -133,29 +160,88 @@ export default function ClawMachineScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     const currentX = clawX.value;
-    const currentY = clawY.value;
 
     // Open the claw immediately when grab is pressed
     setClawState('open');
 
-    // Animate claw going down
-    clawY.value = withSequence(
-      // Descend to prize level
-      withTiming(250, { duration: 1000 }),
-      // Hold at bottom for grabbing
-      withTiming(250, { duration: 500 }, () => {
-        // Check if prize is captured and close claw accordingly
-        const captured = runOnJS(checkPrizeCapture)(currentX, 250);
-        if (!captured) {
-          // If no prize captured, still close the claw
+    // Create a frame-by-frame descent animation with collision detection
+    let animationCancelled = false;
+    let finalY = 0;
+    let touchedPrize: Prize | null = null;
+
+    const descendWithCollisionCheck = () => {
+      const targetY = 250;
+      const duration = 1500;
+      const startTime = Date.now();
+
+      const checkFrame = () => {
+        if (animationCancelled) return;
+
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const currentY = progress * targetY;
+
+        // Check for collision at current position
+        const collision = checkCollisionDuringDescent(currentX, currentY);
+        
+        if (collision) {
+          // Stop descent immediately when touching a prize
+          animationCancelled = true;
+          touchedPrize = collision;
+          finalY = currentY;
+          
+          // Cancel the animation and set to current position
+          cancelAnimation(clawY);
+          clawY.value = currentY;
+          
+          // Close the claw and capture the prize
           runOnJS(setClawState)('closed');
+          runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Medium);
+          
+          // Wait a moment then return to top
+          setTimeout(() => {
+            const captured = checkPrizeCapture(currentX, currentY);
+            
+            clawY.value = withTiming(0, { duration: 1000 }, () => {
+              runOnJS(setIsGrabbing)(false);
+            });
+          }, 500);
+          
+          return;
         }
-      }),
-      // Return to top
-      withTiming(currentY, { duration: 1000 }, () => {
-        runOnJS(setIsGrabbing)(false);
-      })
-    );
+
+        if (progress < 1) {
+          // Continue checking
+          requestAnimationFrame(checkFrame);
+        } else {
+          // Reached bottom without collision
+          finalY = targetY;
+          
+          // Hold at bottom for grabbing
+          setTimeout(() => {
+            const captured = checkPrizeCapture(currentX, targetY);
+            if (!captured) {
+              runOnJS(setClawState)('closed');
+            } else {
+              runOnJS(setClawState)('closed');
+            }
+            
+            // Return to top
+            clawY.value = withTiming(0, { duration: 1000 }, () => {
+              runOnJS(setIsGrabbing)(false);
+            });
+          }, 500);
+        }
+      };
+
+      // Start the descent animation
+      clawY.value = withTiming(targetY, { duration: duration });
+      
+      // Start collision checking
+      requestAnimationFrame(checkFrame);
+    };
+
+    descendWithCollisionCheck();
 
     // Add slight swing animation
     clawRotation.value = withSequence(
