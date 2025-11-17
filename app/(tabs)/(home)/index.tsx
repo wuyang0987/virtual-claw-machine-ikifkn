@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from "react-nati
 import { useRouter } from "expo-router";
 import { colors } from "@/styles/commonStyles";
 import { IconSymbol } from "@/components/IconSymbol";
+import FunClawLogo from "@/components/FunClawLogo";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -15,13 +16,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <IconSymbol 
-            ios_icon_name="gamecontroller.fill" 
-            android_material_icon_name="sports_esports" 
-            size={80} 
-            color={colors.primary} 
-          />
-          <Text style={styles.title}>Virtual Claw Machine</Text>
+          <FunClawLogo size={140} />
+          <Text style={styles.title}>Fun Claw</Text>
           <Text style={styles.subtitle}>Test your skills and win prizes!</Text>
         </View>
 
@@ -34,22 +30,9 @@ export default function HomeScreen() {
               ios_icon_name="play.circle.fill" 
               android_material_icon_name="play_circle" 
               size={32} 
-              color={colors.card} 
+              color="#FFFFFF" 
             />
             <Text style={styles.playButtonText}>Play Game</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.prizesButton}
-            onPress={() => router.push('/prizes')}
-          >
-            <IconSymbol 
-              ios_icon_name="trophy.fill" 
-              android_material_icon_name="emoji_events" 
-              size={28} 
-              color={colors.primary} 
-            />
-            <Text style={styles.prizesButtonText}>My Prizes</Text>
           </TouchableOpacity>
         </View>
 
@@ -57,19 +40,19 @@ export default function HomeScreen() {
           <Text style={styles.infoTitle}>How to Play</Text>
           <View style={styles.infoItem}>
             <Text style={styles.infoBullet}>•</Text>
-            <Text style={styles.infoText}>Use the arrow buttons to move the claw left and right</Text>
+            <Text style={styles.infoText}>The claw moves automatically from left to right</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoBullet}>•</Text>
-            <Text style={styles.infoText}>Press the down arrow to move the claw forward</Text>
+            <Text style={styles.infoText}>Press GRAB when the claw is positioned over a prize</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoBullet}>•</Text>
-            <Text style={styles.infoText}>Press GRAB to try and catch a prize</Text>
+            <Text style={styles.infoText}>The claw will descend and try to catch the prize</Text>
           </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoBullet}>•</Text>
-            <Text style={styles.infoText}>Collect as many prizes as you can!</Text>
+            <Text style={styles.infoText}>Collect as many prizes as you can with your attempts!</Text>
           </View>
         </View>
       </ScrollView>
@@ -83,98 +66,81 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingTop: 60,
+    paddingTop: 80,
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 60,
     alignItems: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 50,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 42,
+    fontWeight: '900',
     color: colors.text,
-    marginTop: 20,
+    marginTop: 24,
     marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: colors.textSecondary,
     textAlign: 'center',
   },
   buttonContainer: {
     width: '100%',
     maxWidth: 400,
-    marginBottom: 30,
+    marginBottom: 40,
   },
   playButton: {
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 30,
-    borderRadius: 16,
-    marginBottom: 16,
-    boxShadow: '0px 4px 12px rgba(41, 98, 255, 0.3)',
-    elevation: 4,
+    paddingVertical: 20,
+    paddingHorizontal: 40,
+    borderRadius: 20,
+    boxShadow: '0px 6px 16px rgba(41, 98, 255, 0.4)',
+    elevation: 6,
   },
   playButtonText: {
-    color: colors.card,
-    fontSize: 20,
-    fontWeight: '700',
-    marginLeft: 12,
-  },
-  prizesButton: {
-    backgroundColor: colors.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 30,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  prizesButtonText: {
-    color: colors.primary,
-    fontSize: 18,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
     marginLeft: 12,
   },
   infoCard: {
     backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 20,
+    padding: 28,
     width: '100%',
     maxWidth: 400,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 2,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
+    elevation: 3,
   },
   infoTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.text,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   infoItem: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 14,
     alignItems: 'flex-start',
   },
   infoBullet: {
-    fontSize: 16,
+    fontSize: 18,
     color: colors.primary,
-    marginRight: 8,
+    marginRight: 10,
     fontWeight: '700',
   },
   infoText: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textSecondary,
     flex: 1,
-    lineHeight: 22,
+    lineHeight: 24,
   },
 });
