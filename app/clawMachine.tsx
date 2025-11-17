@@ -210,7 +210,7 @@ export default function ClawMachineScreen() {
           <View style={styles.topRail} />
           
           <Animated.View style={[styles.claw, clawAnimatedStyle]}>
-            <ClawComponent isGrabbing={isGrabbing} clawState={clawState} />
+            <ClawComponent isGrabbing={isGrabbing} clawState={clawState} clawY={clawY} />
           </Animated.View>
 
           {prizes.map((prize, index) => (
