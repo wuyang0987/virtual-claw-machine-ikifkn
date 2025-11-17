@@ -80,31 +80,64 @@ export default function ClawMachineScreen() {
     setPrizes(newPrizes);
   };
 
-  const startContinuousMovement = () => {
-    // Start from left edge
-    clawX.value = 0;
+  const startContinuousMovement = (startPosition?: number) => {
+    // If startPosition is provided, use it; otherwise start from current position or 0
+    const currentPosition = startPosition !== undefined ? startPosition : clawX.value;
     
-    // Create continuous back-and-forth movement
-    // Duration for one complete cycle (left to right to left)
+    // Determine if we should move right or left first based on current position
+    const maxPosition = MACHINE_WIDTH - CLAW_SIZE;
+    const isCloserToLeft = currentPosition < maxPosition / 2;
+    
+    // Calculate duration based on distance to travel
     const cycleDuration = 4000; // 4 seconds for full cycle
     
-    // Animate from 0 to max and back continuously
-    clawX.value = withRepeat(
-      withSequence(
-        // Move from left (0) to right (MACHINE_WIDTH - CLAW_SIZE)
-        withTiming(MACHINE_WIDTH - CLAW_SIZE, {
-          duration: cycleDuration / 2,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        // Move from right back to left
-        withTiming(0, {
-          duration: cycleDuration / 2,
-          easing: Easing.inOut(Easing.ease),
-        })
-      ),
-      -1, // Repeat infinitely
-      false // Don't reverse, use sequence instead
-    );
+    if (isCloserToLeft) {
+      // Move right first, then left
+      clawX.value = withRepeat(
+        withSequence(
+          // Move from current position to right edge
+          withTiming(maxPosition, {
+            duration: (cycleDuration / 2) * ((maxPosition - currentPosition) / maxPosition),
+            easing: Easing.inOut(Easing.ease),
+          }),
+          // Move from right back to left
+          withTiming(0, {
+            duration: cycleDuration / 2,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          // Move from left to right
+          withTiming(maxPosition, {
+            duration: cycleDuration / 2,
+            easing: Easing.inOut(Easing.ease),
+          })
+        ),
+        -1, // Repeat infinitely
+        false // Don't reverse, use sequence instead
+      );
+    } else {
+      // Move left first, then right
+      clawX.value = withRepeat(
+        withSequence(
+          // Move from current position to left edge
+          withTiming(0, {
+            duration: (cycleDuration / 2) * (currentPosition / maxPosition),
+            easing: Easing.inOut(Easing.ease),
+          }),
+          // Move from left to right
+          withTiming(maxPosition, {
+            duration: cycleDuration / 2,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          // Move from right back to left
+          withTiming(0, {
+            duration: cycleDuration / 2,
+            easing: Easing.inOut(Easing.ease),
+          })
+        ),
+        -1, // Repeat infinitely
+        false // Don't reverse, use sequence instead
+      );
+    }
   };
 
   const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
@@ -167,7 +200,7 @@ export default function ClawMachineScreen() {
     setAttempts(prev => prev - 1);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Stop the continuous movement
+    // Stop the continuous movement and capture current position
     const currentX = clawX.value;
     cancelAnimation(clawX);
     clawX.value = currentX; // Hold at current position
@@ -215,7 +248,8 @@ export default function ClawMachineScreen() {
             
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
-              runOnJS(startContinuousMovement)();
+              // Restart continuous movement from the current X position
+              runOnJS(startContinuousMovement)(currentX);
             });
           }, 500);
           
@@ -241,7 +275,8 @@ export default function ClawMachineScreen() {
             // Return to top
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
-              runOnJS(startContinuousMovement)();
+              // Restart continuous movement from the current X position
+              runOnJS(startContinuousMovement)(currentX);
             });
           }, 500);
         }
@@ -275,9 +310,10 @@ export default function ClawMachineScreen() {
     clawY.value = withSpring(0);
     clawRotation.value = withSpring(0);
     
-    // Restart continuous movement
+    // Restart continuous movement from the beginning (position 0)
     cancelAnimation(clawX);
-    startContinuousMovement();
+    clawX.value = 0;
+    startContinuousMovement(0);
   };
 
   const clawAnimatedStyle = useAnimatedStyle(() => ({
