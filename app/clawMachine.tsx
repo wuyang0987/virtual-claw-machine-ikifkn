@@ -98,15 +98,6 @@ export default function ClawMachineScreen() {
     );
   };
 
-  const moveForward = () => {
-    if (isGrabbing) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawY.value = withSpring(Math.min(100, clawY.value + 40), {
-      damping: 15,
-      stiffness: 150,
-    });
-  };
-
   const checkPrizeCapture = (finalX: number, finalY: number) => {
     const capturedPrize = prizes.find(prize => {
       const distance = Math.sqrt(
@@ -175,6 +166,9 @@ export default function ClawMachineScreen() {
   };
 
   const resetGame = () => {
+    if (isGrabbing) return;
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAttempts(5);
     setWonPrizes([]);
     setClawState('closed');
@@ -198,7 +192,7 @@ export default function ClawMachineScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol 
             ios_icon_name="chevron.left" 
-            android_material_icon_name="arrow_back" 
+            android_material_icon_name="chevron-left" 
             size={24} 
             color={colors.text} 
           />
@@ -238,30 +232,16 @@ export default function ClawMachineScreen() {
 
       <View style={styles.controls}>
         <View style={styles.directionControls}>
-          <View style={styles.topRow}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={moveForward}
-              disabled={isGrabbing}
-            >
-              <IconSymbol 
-                ios_icon_name="arrow.down" 
-                android_material_icon_name="arrow_downward" 
-                size={28} 
-                color={colors.card} 
-              />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.bottomRow}>
+          <View style={styles.horizontalRow}>
             <TouchableOpacity
               style={styles.controlButton}
               onPress={moveLeft}
               disabled={isGrabbing}
             >
               <IconSymbol 
-                ios_icon_name="arrow.left" 
-                android_material_icon_name="arrow_back" 
-                size={28} 
+                ios_icon_name="chevron.left" 
+                android_material_icon_name="chevron-left" 
+                size={32} 
                 color={colors.card} 
               />
             </TouchableOpacity>
@@ -271,30 +251,40 @@ export default function ClawMachineScreen() {
               disabled={isGrabbing}
             >
               <IconSymbol 
-                ios_icon_name="arrow.right" 
-                android_material_icon_name="arrow_forward" 
-                size={28} 
+                ios_icon_name="chevron.right" 
+                android_material_icon_name="chevron-right" 
+                size={32} 
                 color={colors.card} 
               />
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[styles.grabButton, (isGrabbing || attempts <= 0) && styles.grabButtonDisabled]}
-          onPress={grab}
-          disabled={isGrabbing || attempts <= 0}
-        >
-          <Text style={styles.grabButtonText}>
-            {isGrabbing ? 'GRABBING...' : attempts <= 0 ? 'NO ATTEMPTS' : 'GRAB'}
-          </Text>
-        </TouchableOpacity>
-
-        {attempts <= 0 && (
-          <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
-            <Text style={styles.resetButtonText}>Play Again</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.grabButton, (isGrabbing || attempts <= 0) && styles.grabButtonDisabled]}
+            onPress={grab}
+            disabled={isGrabbing || attempts <= 0}
+          >
+            <Text style={styles.grabButtonText}>
+              {isGrabbing ? 'GRABBING...' : attempts <= 0 ? 'NO ATTEMPTS' : 'GRAB'}
+            </Text>
           </TouchableOpacity>
-        )}
+
+          <TouchableOpacity 
+            style={[styles.resetButton, isGrabbing && styles.resetButtonDisabled]} 
+            onPress={resetGame}
+            disabled={isGrabbing}
+          >
+            <IconSymbol 
+              ios_icon_name="arrow.clockwise" 
+              android_material_icon_name="refresh" 
+              size={20} 
+              color={colors.card} 
+            />
+            <Text style={styles.resetButtonText}>Reset</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -388,32 +378,31 @@ const styles = StyleSheet.create({
   directionControls: {
     marginBottom: 20,
   },
-  topRow: {
+  horizontalRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 12,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 80,
+    gap: 100,
   },
   controlButton: {
     backgroundColor: colors.secondary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
     boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
     elevation: 3,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   grabButton: {
     backgroundColor: colors.accent,
     paddingVertical: 18,
-    paddingHorizontal: 60,
+    paddingHorizontal: 50,
     borderRadius: 16,
-    marginBottom: 12,
     boxShadow: '0px 4px 12px rgba(255, 213, 79, 0.4)',
     elevation: 4,
   },
@@ -428,9 +417,17 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
+    elevation: 3,
+  },
+  resetButtonDisabled: {
+    opacity: 0.5,
   },
   resetButtonText: {
     fontSize: 16,
