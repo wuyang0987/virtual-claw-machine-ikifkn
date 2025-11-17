@@ -45,6 +45,7 @@ export default function ClawMachineScreen() {
   const router = useRouter();
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [isGrabbing, setIsGrabbing] = useState(false);
+  const [clawState, setClawState] = useState<'open' | 'closed'>('closed');
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
 
@@ -115,12 +116,21 @@ export default function ClawMachineScreen() {
     });
 
     if (capturedPrize && Math.random() > 0.3) {
+      // Prize captured - close the claw
+      setClawState('closed');
       setWonPrizes(prev => [...prev, capturedPrize]);
       setPrizes(prev => prev.filter(p => p.id !== capturedPrize.id));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}!`);
+      
+      // Show success message after a delay
+      setTimeout(() => {
+        Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}!`);
+      }, 500);
+      
+      return true;
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return false;
     }
   };
 
@@ -134,12 +144,24 @@ export default function ClawMachineScreen() {
     const currentX = clawX.value;
     const currentY = clawY.value;
 
+    // Open the claw immediately when grab is pressed
+    setClawState('open');
+
     // Animate claw going down
     clawY.value = withSequence(
+      // Descend to prize level
       withTiming(250, { duration: 1000 }),
-      withTiming(250, { duration: 800 }), // Hold at bottom for grabbing
+      // Hold at bottom for grabbing
+      withTiming(250, { duration: 500 }, () => {
+        // Check if prize is captured and close claw accordingly
+        const captured = runOnJS(checkPrizeCapture)(currentX, 250);
+        if (!captured) {
+          // If no prize captured, still close the claw
+          runOnJS(setClawState)('closed');
+        }
+      }),
+      // Return to top
       withTiming(currentY, { duration: 1000 }, () => {
-        runOnJS(checkPrizeCapture)(currentX, 250);
         runOnJS(setIsGrabbing)(false);
       })
     );
@@ -155,6 +177,7 @@ export default function ClawMachineScreen() {
   const resetGame = () => {
     setAttempts(5);
     setWonPrizes([]);
+    setClawState('closed');
     initializePrizes();
     clawX.value = withSpring(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
     clawY.value = withSpring(0);
@@ -193,7 +216,7 @@ export default function ClawMachineScreen() {
           <View style={styles.topRail} />
           
           <Animated.View style={[styles.claw, clawAnimatedStyle]}>
-            <ClawComponent isGrabbing={isGrabbing} />
+            <ClawComponent isGrabbing={isGrabbing} clawState={clawState} />
           </Animated.View>
 
           {prizes.map((prize, index) => (

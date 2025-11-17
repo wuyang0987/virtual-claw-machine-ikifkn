@@ -4,26 +4,23 @@ import { View, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withTiming,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { colors } from '@/styles/commonStyles';
 
 interface ClawComponentProps {
   isGrabbing: boolean;
+  clawState: 'open' | 'closed';
 }
 
-export default function ClawComponent({ isGrabbing }: ClawComponentProps) {
+export default function ClawComponent({ isGrabbing, clawState }: ClawComponentProps) {
   const leftClawStyle = useAnimatedStyle(() => {
     return {
       transform: [
         {
-          rotate: isGrabbing
-            ? withSequence(
-                withTiming('-15deg', { duration: 400, easing: Easing.inOut(Easing.ease) }),
-                withTiming('0deg', { duration: 400, easing: Easing.inOut(Easing.ease) })
-              )
-            : withTiming('0deg', { duration: 300 }),
+          rotate: clawState === 'open'
+            ? withTiming('-35deg', { duration: 400, easing: Easing.inOut(Easing.ease) })
+            : withTiming('0deg', { duration: 400, easing: Easing.inOut(Easing.ease) }),
         },
       ],
     };
@@ -33,12 +30,9 @@ export default function ClawComponent({ isGrabbing }: ClawComponentProps) {
     return {
       transform: [
         {
-          rotate: isGrabbing
-            ? withSequence(
-                withTiming('15deg', { duration: 400, easing: Easing.inOut(Easing.ease) }),
-                withTiming('0deg', { duration: 400, easing: Easing.inOut(Easing.ease) })
-              )
-            : withTiming('0deg', { duration: 300 }),
+          rotate: clawState === 'open'
+            ? withTiming('35deg', { duration: 400, easing: Easing.inOut(Easing.ease) })
+            : withTiming('0deg', { duration: 400, easing: Easing.inOut(Easing.ease) }),
         },
       ],
     };
