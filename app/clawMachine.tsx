@@ -10,6 +10,8 @@ import Animated, {
   withTiming,
   runOnJS,
   cancelAnimation,
+  withRepeat,
+  Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
@@ -49,24 +51,17 @@ export default function ClawMachineScreen() {
   const [clawState, setClawState] = useState<'open' | 'closed'>('closed');
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
-  
-  // For automatic movement
-  const [direction, setDirection] = useState<'right' | 'left'>('right');
-  const movementIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const currentSpeedRef = useRef<number>(30);
 
-  const clawX = useSharedValue(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
+  const clawX = useSharedValue(0);
   const clawY = useSharedValue(0);
   const clawRotation = useSharedValue(0);
 
   useEffect(() => {
     initializePrizes();
-    startAutomaticMovement();
+    startContinuousMovement();
 
     return () => {
-      if (movementIntervalRef.current) {
-        clearInterval(movementIntervalRef.current);
-      }
+      cancelAnimation(clawX);
     };
   }, []);
 
@@ -85,64 +80,31 @@ export default function ClawMachineScreen() {
     setPrizes(newPrizes);
   };
 
-  const startAutomaticMovement = () => {
-    // Set initial random speed (between 20-50 pixels per move)
-    currentSpeedRef.current = Math.random() * 30 + 20;
+  const startContinuousMovement = () => {
+    // Start from left edge
+    clawX.value = 0;
     
-    movementIntervalRef.current = setInterval(() => {
-      if (isGrabbing) return;
-
-      const currentX = clawX.value;
-      const maxX = MACHINE_WIDTH - CLAW_SIZE;
-
-      if (direction === 'right') {
-        const newX = currentX + currentSpeedRef.current;
-        
-        if (newX >= maxX) {
-          // Hit right edge, change direction and speed
-          clawX.value = withSpring(maxX, {
-            damping: 15,
-            stiffness: 150,
-          });
-          setDirection('left');
-          // Set new random speed for next direction
-          currentSpeedRef.current = Math.random() * 30 + 20;
-          
-          clawRotation.value = withSequence(
-            withTiming(5, { duration: 100 }),
-            withTiming(0, { duration: 200 })
-          );
-        } else {
-          clawX.value = withSpring(newX, {
-            damping: 15,
-            stiffness: 150,
-          });
-        }
-      } else {
-        const newX = currentX - currentSpeedRef.current;
-        
-        if (newX <= 0) {
-          // Hit left edge, change direction and speed
-          clawX.value = withSpring(0, {
-            damping: 15,
-            stiffness: 150,
-          });
-          setDirection('right');
-          // Set new random speed for next direction
-          currentSpeedRef.current = Math.random() * 30 + 20;
-          
-          clawRotation.value = withSequence(
-            withTiming(-5, { duration: 100 }),
-            withTiming(0, { duration: 200 })
-          );
-        } else {
-          clawX.value = withSpring(newX, {
-            damping: 15,
-            stiffness: 150,
-          });
-        }
-      }
-    }, 100); // Move every 100ms
+    // Create continuous back-and-forth movement
+    // Duration for one complete cycle (left to right to left)
+    const cycleDuration = 4000; // 4 seconds for full cycle
+    
+    // Animate from 0 to max and back continuously
+    clawX.value = withRepeat(
+      withSequence(
+        // Move from left (0) to right (MACHINE_WIDTH - CLAW_SIZE)
+        withTiming(MACHINE_WIDTH - CLAW_SIZE, {
+          duration: cycleDuration / 2,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        // Move from right back to left
+        withTiming(0, {
+          duration: cycleDuration / 2,
+          easing: Easing.inOut(Easing.ease),
+        })
+      ),
+      -1, // Repeat infinitely
+      false // Don't reverse, use sequence instead
+    );
   };
 
   const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
@@ -205,7 +167,10 @@ export default function ClawMachineScreen() {
     setAttempts(prev => prev - 1);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    // Stop the continuous movement
     const currentX = clawX.value;
+    cancelAnimation(clawX);
+    clawX.value = currentX; // Hold at current position
 
     // Open the claw immediately when grab is pressed
     setClawState('open');
@@ -250,6 +215,7 @@ export default function ClawMachineScreen() {
             
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
+              runOnJS(startContinuousMovement)();
             });
           }, 500);
           
@@ -275,6 +241,7 @@ export default function ClawMachineScreen() {
             // Return to top
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
+              runOnJS(startContinuousMovement)();
             });
           }, 500);
         }
@@ -305,17 +272,12 @@ export default function ClawMachineScreen() {
     setWonPrizes([]);
     setClawState('closed');
     initializePrizes();
-    clawX.value = withSpring(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
     clawY.value = withSpring(0);
     clawRotation.value = withSpring(0);
-    setDirection('right');
     
-    // Restart automatic movement with new random speed
-    if (movementIntervalRef.current) {
-      clearInterval(movementIntervalRef.current);
-    }
-    currentSpeedRef.current = Math.random() * 30 + 20;
-    startAutomaticMovement();
+    // Restart continuous movement
+    cancelAnimation(clawX);
+    startContinuousMovement();
   };
 
   const clawAnimatedStyle = useAnimatedStyle(() => ({
