@@ -13,10 +13,11 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import ClawComponent from '@/components/ClawComponent';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MACHINE_WIDTH = Math.min(SCREEN_WIDTH - 40, 400);
-const CLAW_SIZE = 50;
+const CLAW_SIZE = 60;
 const PRIZE_SIZE = 40;
 
 interface Prize {
@@ -49,6 +50,7 @@ export default function ClawMachineScreen() {
 
   const clawX = useSharedValue(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
   const clawY = useSharedValue(0);
+  const clawRotation = useSharedValue(0);
 
   useEffect(() => {
     initializePrizes();
@@ -72,19 +74,36 @@ export default function ClawMachineScreen() {
   const moveLeft = () => {
     if (isGrabbing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawX.value = withSpring(Math.max(0, clawX.value - 40));
+    clawX.value = withSpring(Math.max(0, clawX.value - 40), {
+      damping: 15,
+      stiffness: 150,
+    });
+    clawRotation.value = withSequence(
+      withTiming(-5, { duration: 100 }),
+      withTiming(0, { duration: 200 })
+    );
   };
 
   const moveRight = () => {
     if (isGrabbing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawX.value = withSpring(Math.min(MACHINE_WIDTH - CLAW_SIZE, clawX.value + 40));
+    clawX.value = withSpring(Math.min(MACHINE_WIDTH - CLAW_SIZE, clawX.value + 40), {
+      damping: 15,
+      stiffness: 150,
+    });
+    clawRotation.value = withSequence(
+      withTiming(5, { duration: 100 }),
+      withTiming(0, { duration: 200 })
+    );
   };
 
   const moveForward = () => {
     if (isGrabbing) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawY.value = withSpring(Math.min(100, clawY.value + 40));
+    clawY.value = withSpring(Math.min(100, clawY.value + 40), {
+      damping: 15,
+      stiffness: 150,
+    });
   };
 
   const checkPrizeCapture = (finalX: number, finalY: number) => {
@@ -115,12 +134,21 @@ export default function ClawMachineScreen() {
     const currentX = clawX.value;
     const currentY = clawY.value;
 
+    // Animate claw going down
     clawY.value = withSequence(
-      withTiming(250, { duration: 800 }),
-      withTiming(currentY, { duration: 800 }, () => {
+      withTiming(250, { duration: 1000 }),
+      withTiming(250, { duration: 800 }), // Hold at bottom for grabbing
+      withTiming(currentY, { duration: 1000 }, () => {
         runOnJS(checkPrizeCapture)(currentX, 250);
         runOnJS(setIsGrabbing)(false);
       })
+    );
+
+    // Add slight swing animation
+    clawRotation.value = withSequence(
+      withTiming(3, { duration: 500 }),
+      withTiming(-3, { duration: 500 }),
+      withTiming(0, { duration: 500 })
     );
   };
 
@@ -130,12 +158,14 @@ export default function ClawMachineScreen() {
     initializePrizes();
     clawX.value = withSpring(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
     clawY.value = withSpring(0);
+    clawRotation.value = withSpring(0);
   };
 
   const clawAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: clawX.value },
       { translateY: clawY.value },
+      { rotate: `${clawRotation.value}deg` },
     ],
   }));
 
@@ -159,8 +189,11 @@ export default function ClawMachineScreen() {
 
       <View style={styles.machineContainer}>
         <View style={[styles.machine, { width: MACHINE_WIDTH }]}>
+          {/* Top rail */}
+          <View style={styles.topRail} />
+          
           <Animated.View style={[styles.claw, clawAnimatedStyle]}>
-            <Text style={styles.clawText}>🦾</Text>
+            <ClawComponent isGrabbing={isGrabbing} />
           </Animated.View>
 
           {prizes.map((prize, index) => (
@@ -297,16 +330,23 @@ const styles = StyleSheet.create({
     boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.15)',
     elevation: 5,
   },
+  topRail: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 8,
+    backgroundColor: '#444',
+    borderBottomWidth: 2,
+    borderBottomColor: '#222',
+  },
   claw: {
     position: 'absolute',
     width: CLAW_SIZE,
-    height: CLAW_SIZE,
-    justifyContent: 'center',
+    height: 80,
+    justifyContent: 'flex-start',
     alignItems: 'center',
     zIndex: 10,
-  },
-  clawText: {
-    fontSize: 40,
   },
   prize: {
     position: 'absolute',
