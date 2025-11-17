@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 
 interface FunClawLogoProps {
@@ -9,22 +9,33 @@ interface FunClawLogoProps {
 
 export default function FunClawLogo({ size = 120 }: FunClawLogoProps) {
   const logoSize = size;
-  const fontSize = size * 0.35;
-  const clawSize = size * 0.4;
+  const clawSize = size * 0.5;
 
   return (
     <View style={[styles.container, { width: logoSize, height: logoSize }]}>
       {/* Circular background */}
       <View style={[styles.circle, { width: logoSize, height: logoSize, borderRadius: logoSize / 2 }]}>
-        {/* Claw shape using text */}
+        {/* Claw machine claw */}
         <View style={styles.clawContainer}>
-          <Text style={[styles.clawText, { fontSize: clawSize }]}>🎮</Text>
-        </View>
-        
-        {/* Fun Claw text */}
-        <View style={styles.textContainer}>
-          <Text style={[styles.funText, { fontSize: fontSize }]}>FUN</Text>
-          <Text style={[styles.clawTextLabel, { fontSize: fontSize * 0.8 }]}>CLAW</Text>
+          {/* Cable/chain */}
+          <View style={[styles.cable, { height: logoSize * 0.15 }]} />
+          
+          {/* Claw mechanism */}
+          <View style={styles.clawMechanism}>
+            {/* Left arm */}
+            <View style={[styles.clawArm, styles.clawArmLeft, { 
+              width: logoSize * 0.15, 
+              height: logoSize * 0.25,
+              borderTopLeftRadius: logoSize * 0.05,
+            }]} />
+            
+            {/* Right arm */}
+            <View style={[styles.clawArm, styles.clawArmRight, { 
+              width: logoSize * 0.15, 
+              height: logoSize * 0.25,
+              borderTopRightRadius: logoSize * 0.05,
+            }]} />
+          </View>
         </View>
       </View>
     </View>
@@ -45,26 +56,30 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   clawContainer: {
-    position: 'absolute',
-    top: '15%',
-  },
-  clawText: {
-    textAlign: 'center',
-  },
-  textContainer: {
-    position: 'absolute',
-    bottom: '15%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  funText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    letterSpacing: 2,
+  cable: {
+    width: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
   },
-  clawTextLabel: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginTop: -4,
+  clawMechanism: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  clawArm: {
+    backgroundColor: '#FFD700',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  clawArmLeft: {
+    transform: [{ rotate: '-25deg' }],
+    marginRight: -8,
+  },
+  clawArmRight: {
+    transform: [{ rotate: '25deg' }],
+    marginLeft: -8,
   },
 });
