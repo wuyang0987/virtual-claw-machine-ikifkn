@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -49,6 +49,11 @@ export default function ClawMachineScreen() {
   const [clawState, setClawState] = useState<'open' | 'closed'>('closed');
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
+  
+  // For automatic movement
+  const [direction, setDirection] = useState<'right' | 'left'>('right');
+  const movementIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const currentSpeedRef = useRef<number>(30);
 
   const clawX = useSharedValue(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
   const clawY = useSharedValue(0);
@@ -56,6 +61,13 @@ export default function ClawMachineScreen() {
 
   useEffect(() => {
     initializePrizes();
+    startAutomaticMovement();
+
+    return () => {
+      if (movementIntervalRef.current) {
+        clearInterval(movementIntervalRef.current);
+      }
+    };
   }, []);
 
   const initializePrizes = () => {
@@ -73,30 +85,64 @@ export default function ClawMachineScreen() {
     setPrizes(newPrizes);
   };
 
-  const moveLeft = () => {
-    if (isGrabbing) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawX.value = withSpring(Math.max(0, clawX.value - 40), {
-      damping: 15,
-      stiffness: 150,
-    });
-    clawRotation.value = withSequence(
-      withTiming(-5, { duration: 100 }),
-      withTiming(0, { duration: 200 })
-    );
-  };
+  const startAutomaticMovement = () => {
+    // Set initial random speed (between 20-50 pixels per move)
+    currentSpeedRef.current = Math.random() * 30 + 20;
+    
+    movementIntervalRef.current = setInterval(() => {
+      if (isGrabbing) return;
 
-  const moveRight = () => {
-    if (isGrabbing) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clawX.value = withSpring(Math.min(MACHINE_WIDTH - CLAW_SIZE, clawX.value + 40), {
-      damping: 15,
-      stiffness: 150,
-    });
-    clawRotation.value = withSequence(
-      withTiming(5, { duration: 100 }),
-      withTiming(0, { duration: 200 })
-    );
+      const currentX = clawX.value;
+      const maxX = MACHINE_WIDTH - CLAW_SIZE;
+
+      if (direction === 'right') {
+        const newX = currentX + currentSpeedRef.current;
+        
+        if (newX >= maxX) {
+          // Hit right edge, change direction and speed
+          clawX.value = withSpring(maxX, {
+            damping: 15,
+            stiffness: 150,
+          });
+          setDirection('left');
+          // Set new random speed for next direction
+          currentSpeedRef.current = Math.random() * 30 + 20;
+          
+          clawRotation.value = withSequence(
+            withTiming(5, { duration: 100 }),
+            withTiming(0, { duration: 200 })
+          );
+        } else {
+          clawX.value = withSpring(newX, {
+            damping: 15,
+            stiffness: 150,
+          });
+        }
+      } else {
+        const newX = currentX - currentSpeedRef.current;
+        
+        if (newX <= 0) {
+          // Hit left edge, change direction and speed
+          clawX.value = withSpring(0, {
+            damping: 15,
+            stiffness: 150,
+          });
+          setDirection('right');
+          // Set new random speed for next direction
+          currentSpeedRef.current = Math.random() * 30 + 20;
+          
+          clawRotation.value = withSequence(
+            withTiming(-5, { duration: 100 }),
+            withTiming(0, { duration: 200 })
+          );
+        } else {
+          clawX.value = withSpring(newX, {
+            damping: 15,
+            stiffness: 150,
+          });
+        }
+      }
+    }, 100); // Move every 100ms
   };
 
   const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
@@ -262,6 +308,14 @@ export default function ClawMachineScreen() {
     clawX.value = withSpring(MACHINE_WIDTH / 2 - CLAW_SIZE / 2);
     clawY.value = withSpring(0);
     clawRotation.value = withSpring(0);
+    setDirection('right');
+    
+    // Restart automatic movement with new random speed
+    if (movementIntervalRef.current) {
+      clearInterval(movementIntervalRef.current);
+    }
+    currentSpeedRef.current = Math.random() * 30 + 20;
+    startAutomaticMovement();
   };
 
   const clawAnimatedStyle = useAnimatedStyle(() => ({
@@ -317,34 +371,9 @@ export default function ClawMachineScreen() {
       </View>
 
       <View style={styles.controls}>
-        <View style={styles.directionControls}>
-          <View style={styles.horizontalRow}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={moveLeft}
-              disabled={isGrabbing}
-            >
-              <IconSymbol 
-                ios_icon_name="chevron.left" 
-                android_material_icon_name="chevron-left" 
-                size={32} 
-                color={colors.card} 
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={moveRight}
-              disabled={isGrabbing}
-            >
-              <IconSymbol 
-                ios_icon_name="chevron.right" 
-                android_material_icon_name="chevron-right" 
-                size={32} 
-                color={colors.card} 
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Text style={styles.instructionText}>
+          The claw moves automatically! Press GRAB when ready.
+        </Text>
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
@@ -461,23 +490,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
   },
-  directionControls: {
+  instructionText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
     marginBottom: 20,
-  },
-  horizontalRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 100,
-  },
-  controlButton: {
-    backgroundColor: colors.secondary,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
-    elevation: 3,
+    fontWeight: '500',
   },
   actionButtons: {
     flexDirection: 'row',
