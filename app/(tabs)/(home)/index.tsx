@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingTop: 30,
+    paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 60,
     alignItems: 'center',
