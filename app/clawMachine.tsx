@@ -16,6 +16,7 @@ import Animated, {
   FadeOut,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import ClawComponent from '@/components/ClawComponent';
@@ -24,6 +25,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MACHINE_WIDTH = Math.min(SCREEN_WIDTH - 40, 400);
 const CLAW_SIZE = 60;
 const PRIZE_SIZE = 40;
+const HIGHEST_SCORE_KEY = '@claw_machine_highest_score';
 
 interface Prize {
   id: number;
@@ -55,6 +57,7 @@ export default function ClawMachineScreen() {
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [highestPoints, setHighestPoints] = useState(0);
   const [tipMessage, setTipMessage] = useState<string>('');
   const [showTip, setShowTip] = useState(false);
 
@@ -75,6 +78,7 @@ export default function ClawMachineScreen() {
   }, [isGrabbing]);
 
   useEffect(() => {
+    loadHighestScore();
     initializePrizes();
     startContinuousMovement();
 
@@ -91,6 +95,45 @@ export default function ClawMachineScreen() {
       return () => clearTimeout(timer);
     }
   }, [showTip]);
+
+  // Update highest score when total points change
+  useEffect(() => {
+    if (totalPoints > highestPoints) {
+      setHighestPoints(totalPoints);
+      saveHighestScore(totalPoints);
+    }
+  }, [totalPoints]);
+
+  const loadHighestScore = async () => {
+    try {
+      const storedScore = await AsyncStorage.getItem(HIGHEST_SCORE_KEY);
+      if (storedScore !== null) {
+        const score = parseInt(storedScore, 10);
+        console.log('Loaded highest score:', score);
+        setHighestPoints(score);
+      }
+    } catch (error) {
+      console.error('Error loading highest score:', error);
+    }
+  };
+
+  const saveHighestScore = async (score: number) => {
+    try {
+      await AsyncStorage.setItem(HIGHEST_SCORE_KEY, score.toString());
+      console.log('Saved highest score:', score);
+      
+      // Show celebration message when new high score is achieved
+      showTipText(`🏆 NEW HIGH SCORE: ${score} points!`);
+      
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        console.log('Haptics error:', error);
+      }
+    } catch (error) {
+      console.error('Error saving highest score:', error);
+    }
+  };
 
   const initializePrizes = () => {
     const newPrizes: Prize[] = [];
@@ -299,8 +342,23 @@ export default function ClawMachineScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.statsContainer}>
-          <Text style={styles.attemptsText}>Attempts: {attempts}</Text>
-          <Text style={styles.wonText}>Points: {totalPoints}</Text>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Attempts</Text>
+            <Text style={styles.statValue}>{attempts}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Points</Text>
+            <Text style={[styles.statValue, styles.pointsValue]}>{totalPoints}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <IconSymbol 
+              ios_icon_name="trophy.fill" 
+              android_material_icon_name="emoji_events" 
+              size={16} 
+              color={colors.accent} 
+            />
+            <Text style={[styles.statValue, styles.highScoreValue]}>{highestPoints}</Text>
+          </View>
         </View>
       </View>
 
@@ -382,24 +440,44 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 15,
   },
   statsContainer: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 20,
+    backgroundColor: colors.card,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
   },
-  attemptsText: {
-    fontSize: 16,
-    fontWeight: '700',
+  statItem: {
+    alignItems: 'center',
+    gap: 4,
+    flexDirection: 'row',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
     color: colors.text,
   },
-  wonText: {
-    fontSize: 16,
-    fontWeight: '700',
+  pointsValue: {
     color: colors.primary,
+  },
+  highScoreValue: {
+    color: colors.accent,
+    marginLeft: 4,
   },
   tipContainer: {
     position: 'absolute',
