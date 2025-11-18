@@ -29,19 +29,20 @@ interface Prize {
   y: number;
   emoji: string;
   name: string;
+  points: number;
 }
 
 const AVAILABLE_PRIZES = [
-  { emoji: '🧸', name: 'Teddy Bear' },
-  { emoji: '🎮', name: 'Game Console' },
-  { emoji: '🎁', name: 'Gift Box' },
-  { emoji: '⚽', name: 'Soccer Ball' },
-  { emoji: '🎸', name: 'Guitar' },
-  { emoji: '🎨', name: 'Art Set' },
-  { emoji: '📱', name: 'Phone' },
-  { emoji: '🎧', name: 'Headphones' },
-  { emoji: '⌚', name: 'Watch' },
-  { emoji: '🎪', name: 'Circus Tent' },
+  { emoji: '🧸', name: 'Teddy Bear', points: 10 },
+  { emoji: '🎮', name: 'Game Console', points: 50 },
+  { emoji: '🎁', name: 'Gift Box', points: 15 },
+  { emoji: '⚽', name: 'Soccer Ball', points: 20 },
+  { emoji: '🎸', name: 'Guitar', points: 35 },
+  { emoji: '🎨', name: 'Art Set', points: 25 },
+  { emoji: '📱', name: 'Phone', points: 100 },
+  { emoji: '🎧', name: 'Headphones', points: 40 },
+  { emoji: '⌚', name: 'Watch', points: 75 },
+  { emoji: '🎪', name: 'Circus Tent', points: 30 },
 ];
 
 export default function ClawMachineScreen() {
@@ -51,6 +52,7 @@ export default function ClawMachineScreen() {
   const [clawState, setClawState] = useState<'open' | 'closed'>('closed');
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
+  const [totalPoints, setTotalPoints] = useState(0);
 
   const clawX = useSharedValue(0);
   const clawY = useSharedValue(0);
@@ -75,6 +77,7 @@ export default function ClawMachineScreen() {
         y: Math.random() * 80 + 200,
         emoji: randomPrize.emoji,
         name: randomPrize.name,
+        points: randomPrize.points,
       });
     }
     setPrizes(newPrizes);
@@ -179,11 +182,12 @@ export default function ClawMachineScreen() {
 
     if (capturedPrize && Math.random() > 0.3) {
       setWonPrizes(prev => [...prev, capturedPrize]);
+      setTotalPoints(prev => prev + capturedPrize.points);
       setPrizes(prev => prev.filter(p => p.id !== capturedPrize.id));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       setTimeout(() => {
-        Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}!`);
+        Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}! +${capturedPrize.points} points`);
       }, 500);
       
       return capturedPrize;
@@ -305,6 +309,7 @@ export default function ClawMachineScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAttempts(5);
     setWonPrizes([]);
+    setTotalPoints(0);
     setClawState('closed');
     initializePrizes();
     clawY.value = withSpring(0);
@@ -328,17 +333,11 @@ export default function ClawMachineScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <IconSymbol 
-            ios_icon_name="chevron.left" 
-            android_material_icon_name="chevron-left" 
-            size={24} 
-            color={colors.text} 
-          />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <View style={styles.statsContainer}>
           <Text style={styles.attemptsText}>Attempts: {attempts}</Text>
-          <Text style={styles.wonText}>Won: {wonPrizes.length}</Text>
+          <Text style={styles.wonText}>Points: {totalPoints}</Text>
         </View>
       </View>
 
@@ -407,25 +406,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: 50,
+    paddingTop: 30,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 8,
   },
   backText: {
-    fontSize: 16,
-    color: colors.text,
-    marginLeft: 4,
-    fontWeight: '600',
+    fontSize: 18,
+    color: colors.primary,
+    fontWeight: '700',
   },
   statsContainer: {
     flexDirection: 'row',
