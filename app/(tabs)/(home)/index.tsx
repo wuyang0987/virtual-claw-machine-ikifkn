@@ -3,7 +3,6 @@ import React from "react";
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { colors } from "@/styles/commonStyles";
-import { IconSymbol } from "@/components/IconSymbol";
 import FunClawLogo from "@/components/FunClawLogo";
 
 export default function HomeScreen() {
@@ -26,12 +25,6 @@ export default function HomeScreen() {
             style={styles.playButton}
             onPress={() => router.push('/clawMachine')}
           >
-            <IconSymbol 
-              ios_icon_name="play.circle.fill" 
-              android_material_icon_name="play_circle" 
-              size={32} 
-              color="#FFFFFF" 
-            />
             <Text style={styles.playButtonText}>Play Game</Text>
           </TouchableOpacity>
         </View>
@@ -109,7 +102,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
-    marginLeft: 12,
   },
   infoCard: {
     backgroundColor: colors.card,

@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "Fun Claw",
-    "slug": "fun-claw",
+    "name": "Virtual Claw",
+    "slug": "Virtual Claw",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -45,5 +44,5 @@
       "router": {}
     }
   },
-  "scheme": "fun-claw"
+  "scheme": "Virtual Claw"
 }
