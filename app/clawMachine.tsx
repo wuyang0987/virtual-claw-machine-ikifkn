@@ -224,8 +224,10 @@ export default function ClawMachineScreen() {
             
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
-              // Restart continuous movement from the current X position
-              runOnJS(startContinuousMovement)(currentX);
+              // Reset claw position to 0 and restart continuous movement
+              runOnJS(cancelAnimation)(clawX);
+              clawX.value = 0;
+              runOnJS(startContinuousMovement)(0);
             });
           }, 500);
           
@@ -251,8 +253,10 @@ export default function ClawMachineScreen() {
             // Return to top
             clawY.value = withTiming(0, { duration: 1000 }, () => {
               runOnJS(setIsGrabbing)(false);
-              // Restart continuous movement from the current X position
-              runOnJS(startContinuousMovement)(currentX);
+              // Reset claw position to 0 and restart continuous movement
+              runOnJS(cancelAnimation)(clawX);
+              clawX.value = 0;
+              runOnJS(startContinuousMovement)(0);
             });
           }, 500);
         }
