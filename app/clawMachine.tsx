@@ -186,6 +186,11 @@ export default function ClawMachineScreen() {
     }
   };
 
+  const handlePrizeCheck = (currentX: number, targetY: number) => {
+    console.log('handlePrizeCheck called with:', currentX, targetY);
+    checkPrizeCapture(currentX, targetY);
+  };
+
   const handleGrabComplete = () => {
     console.log('Grab complete, resetting');
     setIsGrabbing(false);
@@ -234,9 +239,8 @@ export default function ClawMachineScreen() {
         // Small delay before checking capture
         clawY.value = withTiming(targetY, { duration: 300 }, (finished2) => {
           if (finished2) {
-            // Check for prize capture
-            const captured = checkPrizeCapture(currentX, targetY);
-            console.log('Prize capture result:', captured);
+            // Check for prize capture using runOnJS
+            runOnJS(handlePrizeCheck)(currentX, targetY);
             
             // Return to top
             clawY.value = withTiming(0, { duration: 1000 }, (finished3) => {
