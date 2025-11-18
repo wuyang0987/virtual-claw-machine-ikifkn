@@ -353,8 +353,8 @@ export default function ClawMachineScreen() {
           <View style={styles.statItem}>
             <IconSymbol 
               ios_icon_name="trophy.fill" 
-              android_material_icon_name="emoji_events" 
-              size={16} 
+              android_material_icon_name="star" 
+              size={18} 
               color={colors.accent} 
             />
             <Text style={[styles.statValue, styles.highScoreValue]}>{highestPoints}</Text>
