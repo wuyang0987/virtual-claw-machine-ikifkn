@@ -84,63 +84,35 @@ export default function ClawMachineScreen() {
   };
 
   const startContinuousMovement = (startPosition?: number) => {
-    // If startPosition is provided, use it; otherwise start from current position or 0
-    const currentPosition = startPosition !== undefined ? startPosition : clawX.value;
+    // Start from position 0 or provided position
+    const currentPosition = startPosition !== undefined ? startPosition : 0;
     
-    // Determine if we should move right or left first based on current position
+    // Set initial position
+    clawX.value = currentPosition;
+    
+    // Calculate the max position
     const maxPosition = MACHINE_WIDTH - CLAW_SIZE;
-    const isCloserToLeft = currentPosition < maxPosition / 2;
     
-    // Calculate duration based on distance to travel
+    // Duration for one complete cycle (left to right to left)
     const cycleDuration = 4000; // 4 seconds for full cycle
     
-    if (isCloserToLeft) {
-      // Move right first, then left
-      clawX.value = withRepeat(
-        withSequence(
-          // Move from current position to right edge
-          withTiming(maxPosition, {
-            duration: (cycleDuration / 2) * ((maxPosition - currentPosition) / maxPosition),
-            easing: Easing.inOut(Easing.ease),
-          }),
-          // Move from right back to left
-          withTiming(0, {
-            duration: cycleDuration / 2,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          // Move from left to right
-          withTiming(maxPosition, {
-            duration: cycleDuration / 2,
-            easing: Easing.inOut(Easing.ease),
-          })
-        ),
-        -1, // Repeat infinitely
-        false // Don't reverse, use sequence instead
-      );
-    } else {
-      // Move left first, then right
-      clawX.value = withRepeat(
-        withSequence(
-          // Move from current position to left edge
-          withTiming(0, {
-            duration: (cycleDuration / 2) * (currentPosition / maxPosition),
-            easing: Easing.inOut(Easing.ease),
-          }),
-          // Move from left to right
-          withTiming(maxPosition, {
-            duration: cycleDuration / 2,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          // Move from right back to left
-          withTiming(0, {
-            duration: cycleDuration / 2,
-            easing: Easing.inOut(Easing.ease),
-          })
-        ),
-        -1, // Repeat infinitely
-        false // Don't reverse, use sequence instead
-      );
-    }
+    // Create a continuous left-to-right and right-to-left animation
+    clawX.value = withRepeat(
+      withSequence(
+        // Move from left (0) to right (maxPosition)
+        withTiming(maxPosition, {
+          duration: cycleDuration / 2,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        // Move from right (maxPosition) back to left (0)
+        withTiming(0, {
+          duration: cycleDuration / 2,
+          easing: Easing.inOut(Easing.ease),
+        })
+      ),
+      -1, // Repeat infinitely
+      false // Don't reverse, use sequence instead
+    );
   };
 
   const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
@@ -332,9 +304,9 @@ export default function ClawMachineScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Fun Claw</Text>
+        </View>
         <View style={styles.statsContainer}>
           <Text style={styles.attemptsText}>Attempts: {attempts}</Text>
           <Text style={styles.wonText}>Points: {totalPoints}</Text>
@@ -415,13 +387,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 15,
   },
-  backButton: {
+  titleContainer: {
     padding: 8,
   },
-  backText: {
-    fontSize: 18,
+  titleText: {
+    fontSize: 24,
     color: colors.primary,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   statsContainer: {
     flexDirection: 'row',
