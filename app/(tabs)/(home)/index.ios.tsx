@@ -41,19 +41,15 @@ export default function HomeScreen() {
             <Text style={styles.infoTitle}>How to Play</Text>
             <View style={styles.infoItem}>
               <Text style={styles.infoBullet}>•</Text>
-              <Text style={styles.infoText}>The claw moves automatically from left to right</Text>
+              <Text style={styles.infoText}>Claw moves automatically left to right</Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoBullet}>•</Text>
-              <Text style={styles.infoText}>Press GRAB when the claw is positioned over a prize</Text>
+              <Text style={styles.infoText}>Press GRAB over a prize</Text>
             </View>
             <View style={styles.infoItem}>
               <Text style={styles.infoBullet}>•</Text>
-              <Text style={styles.infoText}>The claw will descend and try to catch the prize</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoBullet}>•</Text>
-              <Text style={styles.infoText}>Collect as many prizes as you can with your attempts!</Text>
+              <Text style={styles.infoText}>Collect as many prizes as you can!</Text>
             </View>
           </View>
         </ScrollView>
@@ -75,7 +71,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 30,
   },
   title: {
     fontSize: 42,
@@ -115,7 +111,7 @@ const styles = StyleSheet.create({
   infoCard: {
     backgroundColor: colors.card,
     borderRadius: 20,
-    padding: 28,
+    padding: 20,
     width: '100%',
     maxWidth: 400,
     boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)',
@@ -125,11 +121,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: colors.text,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   infoItem: {
     flexDirection: 'row',
-    marginBottom: 14,
+    marginBottom: 10,
     alignItems: 'flex-start',
   },
   infoBullet: {
@@ -142,6 +138,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     flex: 1,
-    lineHeight: 24,
+    lineHeight: 22,
   },
 });
