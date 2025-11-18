@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -12,6 +12,8 @@ import Animated, {
   cancelAnimation,
   withRepeat,
   Easing,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
@@ -53,6 +55,8 @@ export default function ClawMachineScreen() {
   const [attempts, setAttempts] = useState(5);
   const [wonPrizes, setWonPrizes] = useState<Prize[]>([]);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [tipMessage, setTipMessage] = useState<string>('');
+  const [showTip, setShowTip] = useState(false);
 
   const clawX = useSharedValue(0);
   const clawY = useSharedValue(0);
@@ -66,6 +70,15 @@ export default function ClawMachineScreen() {
       cancelAnimation(clawX);
     };
   }, []);
+
+  useEffect(() => {
+    if (showTip) {
+      const timer = setTimeout(() => {
+        setShowTip(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTip]);
 
   const initializePrizes = () => {
     const newPrizes: Prize[] = [];
@@ -115,6 +128,11 @@ export default function ClawMachineScreen() {
     );
   };
 
+  const showTipText = (message: string) => {
+    setTipMessage(message);
+    setShowTip(true);
+  };
+
   const checkCollisionDuringDescent = (currentX: number, currentY: number): Prize | null => {
     // Check if claw is touching any prize during descent
     const touchedPrize = prizes.find(prize => {
@@ -159,7 +177,7 @@ export default function ClawMachineScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       setTimeout(() => {
-        Alert.alert('🎉 Success!', `You won a ${capturedPrize.name}! +${capturedPrize.points} points`);
+        showTipText(`🎉 You won a ${capturedPrize.name}! +${capturedPrize.points} points`);
       }, 500);
       
       return capturedPrize;
@@ -314,6 +332,16 @@ export default function ClawMachineScreen() {
         </View>
       </View>
 
+      {showTip && (
+        <Animated.View 
+          entering={FadeIn.duration(300)} 
+          exiting={FadeOut.duration(300)}
+          style={styles.tipContainer}
+        >
+          <Text style={styles.tipText}>{tipMessage}</Text>
+        </Animated.View>
+      )}
+
       <View style={styles.machineContainer}>
         <View style={[styles.machine, { width: MACHINE_WIDTH }]}>
           {/* Top rail */}
@@ -401,6 +429,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.primary,
+  },
+  tipContainer: {
+    position: 'absolute',
+    top: 80,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    zIndex: 100,
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.25)',
+    elevation: 8,
+  },
+  tipText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.card,
+    textAlign: 'center',
   },
   machineContainer: {
     alignItems: 'center',
