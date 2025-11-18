@@ -304,9 +304,6 @@ export default function ClawMachineScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Fun Claw</Text>
-        </View>
         <View style={styles.statsContainer}>
           <Text style={styles.attemptsText}>Attempts: {attempts}</Text>
           <Text style={styles.wonText}>Points: {totalPoints}</Text>
@@ -382,18 +379,10 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 15,
-  },
-  titleContainer: {
-    padding: 8,
-  },
-  titleText: {
-    fontSize: 24,
-    color: colors.primary,
-    fontWeight: '800',
   },
   statsContainer: {
     flexDirection: 'row',
